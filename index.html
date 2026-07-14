@@ -1,23 +1,132 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="fa" dir="rtl">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta
-      name="description"
-      content="ENZO.DEV — طراحی سایت اختصاصی، مدرن و جذاب برای کسب‌وکار شما"
-    />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Vazirmatn:wght@400;500;600;700;800&display=swap"
-      rel="stylesheet"
-    />
-    <title>ENZO.DEV | طراحی سایت</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="ENZO.DEV — طراحی سایت اختصاصی با تجربه اسکرول سینمایی" />
+  <title>ENZO.DEV | طراحی سایت</title>
+  <link rel="icon" href="/public/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="loader">
+    <div class="loader-brand" dir="ltr">ENZO.DEV</div>
+    <div id="loader-bar"><span id="loader-fill"></span></div>
+    <div id="loader-percent">0%</div>
+  </div>
+
+  <header class="site-header">
+    <nav>
+      <a href="#" class="logo" dir="ltr">ENZO.DEV</a>
+      <div class="nav-links">
+        <a href="#showcase">نمونه</a>
+        <a href="#contact">تماس</a>
+      </div>
+    </nav>
+  </header>
+
+  <section class="hero-standalone" id="hero">
+    <span class="section-label">001 / Studio</span>
+    <h1 class="hero-heading">
+      <span class="word">طراحی</span>
+      <span class="word">سایت</span>
+      <span class="word accent">سینمایی</span>
+    </h1>
+    <p class="hero-tagline">تجربه‌ای که با اسکرول زنده می‌شود — برای برندهایی که می‌خواهند دیده شوند.</p>
+    <div class="scroll-indicator">
+      <span>اسکرول</span>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+    </div>
+  </section>
+
+  <div class="canvas-wrap" id="canvas-wrap">
+    <canvas id="canvas"></canvas>
+  </div>
+
+  <div id="dark-overlay"></div>
+
+  <div class="marquee-wrap" data-enter="20" data-leave="75" data-scroll-speed="-30">
+    <div class="marquee-text" dir="ltr">ENZO.DEV — WEB DESIGN — SCROLL EXPERIENCE — ENZO.DEV —</div>
+  </div>
+
+  <div id="scroll-container">
+    <section class="scroll-section section-content align-right" id="showcase"
+      data-enter="18" data-leave="32" data-animation="fade-up">
+      <div class="section-inner">
+        <span class="section-label">002 / Design</span>
+        <h2 class="section-heading">طراحی اختصاصی، نه قالب</h2>
+        <p class="section-body">هر پروژه با هویت بصری منحصربه‌فرد شما ساخته می‌شود — از تایپوگرافی تا انیمیشن اسکرول.</p>
+      </div>
+    </section>
+
+    <section class="scroll-section section-content align-left"
+      data-enter="30" data-leave="44" data-animation="slide-right">
+      <div class="section-inner">
+        <span class="section-label">003 / Motion</span>
+        <h2 class="section-heading">حرکت در خدمت روایت</h2>
+        <p class="section-body">ویدیو، فریم‌به‌فریم، پین و اسکراب — همان حس سایت‌های پریمیوم که مشتری را میخکوب می‌کند.</p>
+      </div>
+    </section>
+
+    <section class="scroll-section section-content align-right"
+      data-enter="42" data-leave="56" data-animation="scale-up">
+      <div class="section-inner">
+        <span class="section-label">004 / Performance</span>
+        <h2 class="section-heading">سریع، سبک، موبایل‌فرست</h2>
+        <p class="section-body">بهینه برای سئو و موبایل — زیبایی بدون قربانی کردن سرعت بارگذاری.</p>
+      </div>
+    </section>
+
+    <section class="scroll-section section-stats"
+      data-enter="54" data-leave="72" data-animation="stagger-up">
+      <div class="stats-grid">
+        <div class="stat">
+          <span class="stat-number" data-value="50" data-decimals="0">0</span>
+          <span class="stat-suffix">+</span>
+          <span class="stat-label">پروژه تحویل‌شده</span>
+        </div>
+        <div class="stat">
+          <span class="stat-number" data-value="3" data-decimals="0">0</span>
+          <span class="stat-suffix">ث</span>
+          <span class="stat-label">میانگین لود</span>
+        </div>
+        <div class="stat">
+          <span class="stat-number" data-value="100" data-decimals="0">0</span>
+          <span class="stat-suffix">%</span>
+          <span class="stat-label">ریسپانسیو</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="scroll-section section-content align-left"
+      data-enter="68" data-leave="82" data-animation="clip-reveal">
+      <div class="section-inner">
+        <span class="section-label">005 / Process</span>
+        <h2 class="section-heading">از ایده تا لانچ</h2>
+        <p class="section-body">مشاوره، طراحی، توسعه، تست و دیپلوی — یک مسیر شفاف تا سایت زنده شما.</p>
+      </div>
+    </section>
+
+    <section class="scroll-section section-content align-right" id="contact"
+      data-enter="85" data-leave="100" data-animation="rotate-in" data-persist="true">
+      <div class="section-inner">
+        <span class="section-label">006 / Contact</span>
+        <h2 class="section-heading">پروژه بعدی‌تان را بسازیم</h2>
+        <p class="section-body">برای مشاوره و شروع همکاری از لینکدین یا گیت‌هاب پیام دهید.</p>
+        <div class="cta-buttons">
+          <a href="https://www.linkedin.com/in/mohammad-hasseli-59a624362/" target="_blank" rel="noopener" class="cta-button primary">LinkedIn</a>
+          <a href="https://github.com/mhasseli1987" target="_blank" rel="noopener" class="cta-button">GitHub</a>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/lenis@1/dist/lenis.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/ScrollTrigger.min.js"></script>
+  <script src="js/app.js"></script>
+</body>
 </html>

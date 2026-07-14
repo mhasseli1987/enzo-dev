@@ -1,43 +1,28 @@
-# ENZO.DEV
+# ENZO.DEV — Scroll-Driven Demo
 
-لندینگ تک‌صفحه‌ای برای جذب مشتری طراحی سایت — کاملاً جدا از پروژه WrapMode.
-
-## استک
-
-- Vite + React + TypeScript
-- Tailwind CSS v4
-- GSAP ScrollTrigger (scroll-driven video)
+لندینگ تک‌صفحه‌ای با **اسکرول-ویدیو** (۲۴۱ فریم از کلیپ ۸ ثانیه‌ای).
 
 ## لوکال
 
 ```bash
-npm install
-npm run dev
+npx serve . -l 3456
 ```
 
-باز کنید: http://localhost:5173
+http://localhost:3456
 
-## بیلد
+## ویدیو
 
+کلیپ را بگذارید در: `source/hero.mp4`
+
+استخراج فریم‌ها:
 ```bash
-npm run build
-npm run preview
+ffmpeg -i source/hero.mp4 -vf "fps=30,scale=1920:-1" -c:v libwebp -quality 80 frames/frame_%04d.webp
 ```
 
 ## Netlify
 
-1. ریپو را به Netlify وصل کنید
-2. Build command: `npm run build`
-3. Publish directory: `dist`
-
-یا با CLI:
-
-```bash
-npm i -g netlify-cli
-netlify login
-netlify init
-netlify deploy --prod
-```
+- Publish: `.` (ریشه پروژه)
+- بدون build command
 
 ## تماس
 
