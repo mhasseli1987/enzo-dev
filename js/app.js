@@ -1,343 +1,390 @@
-/* ENZO.DEV — scroll-driven frame sequence */
-const FRAME_COUNT = 241;
-const FRAME_SPEED = 2.0;
-const IMAGE_SCALE = 0.85;
-const FRAME_PATH = (i) => `frames/frame_${String(i + 1).padStart(4, "0")}.webp`;
+(() => {
+  gsap.registerPlugin(ScrollTrigger);
 
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
-const canvasWrap = document.getElementById("canvas-wrap");
-const scrollContainer = document.getElementById("scroll-container");
-const heroSection = document.getElementById("hero");
-const loader = document.getElementById("loader");
-const loaderFill = document.getElementById("loader-fill");
-const loaderPercent = document.getElementById("loader-percent");
+  const FRAME_DIR = "frames/";
+  // Full ping-pong on disk — every frame for micro-step scrub
+  const SOURCE_FRAMES = 383;
+  // Spread animation across nearly entire scroll (no early jump-to-end)
+  const FRAME_SCROLL_END = 0.92;
+  const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const mobileMQ = window.matchMedia("(max-width: 768px)");
+  const isMobile = () => mobileMQ.matches;
 
-const frames = [];
-let currentFrame = -1;
-let bgColor = "#f5f3f0";
+  const loader = document.getElementById("loader");
+  const loaderBar = document.getElementById("loader-bar");
+  const loaderPercent = document.getElementById("loader-percent");
+  const canvas = document.getElementById("canvas");
+  const canvasWrap = document.getElementById("canvas-wrap");
+  const scrollContainer = document.getElementById("scroll-container");
+  const heroSection = document.querySelector(".hero-standalone");
+  const overlay = document.getElementById("dark-overlay");
+  const ctx = canvas.getContext("2d", { alpha: false, desynchronized: true });
 
-gsap.registerPlugin(ScrollTrigger);
+  let frames = [];
+  let currentFrame = -1;
+  let bgColor = "#07060b";
+  let sectionDrivers = [];
 
-/* ── Lenis ── */
-const lenis = new Lenis({
-  duration: 1.2,
-  easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-  smoothWheel: true,
-});
-lenis.on("scroll", ScrollTrigger.update);
-gsap.ticker.add((time) => lenis.raf(time * 1000));
-gsap.ticker.lagSmoothing(0);
+  // Smooth float scrub — prevents sudden frame jumps
+  let targetFrameF = 0;
+  let smoothFrameF = 0;
+  let scrubRaf = 0;
 
-/* ── Canvas sizing ── */
-function resizeCanvas() {
-  const dpr = window.devicePixelRatio || 1;
-  canvas.width = window.innerWidth * dpr;
-  canvas.height = window.innerHeight * dpr;
-  canvas.style.width = window.innerWidth + "px";
-  canvas.style.height = window.innerHeight + "px";
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  if (currentFrame >= 0) drawFrame(currentFrame);
-}
-window.addEventListener("resize", resizeCanvas);
+  // Soft Lenis: each wheel tick moves less distance → finer frames
+  const lenis = prefersReducedMotion
+    ? null
+    : new Lenis({
+        duration: 1.35,
+        easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+        smoothWheel: true,
+        wheelMultiplier: isMobile() ? 0.55 : 0.42,
+        touchMultiplier: 0.85,
+        syncTouch: true,
+        syncTouchLerp: 0.08,
+        lerp: 0.075,
+      });
 
-/* ── Background color sampling ── */
-function sampleBgColor(img) {
-  const tmp = document.createElement("canvas");
-  tmp.width = tmp.height = 1;
-  const tctx = tmp.getContext("2d");
-  tctx.drawImage(img, 0, 0, 1, 1);
-  const [r, g, b] = tctx.getImageData(0, 0, 1, 1).data;
-  return `rgb(${r},${g},${b})`;
-}
+  if (lenis) {
+    lenis.on("scroll", ScrollTrigger.update);
+    gsap.ticker.add((time) => lenis.raf(time * 1000));
+    gsap.ticker.lagSmoothing(0);
+  }
 
-/* ── Draw frame (padded cover) ── */
-function drawFrame(index) {
-  const img = frames[index];
-  if (!img || !img.complete) return;
-  const cw = window.innerWidth;
-  const ch = window.innerHeight;
-  const iw = img.naturalWidth;
-  const ih = img.naturalHeight;
-  const scale = Math.max(cw / iw, ch / ih) * IMAGE_SCALE;
-  const dw = iw * scale;
-  const dh = ih * scale;
-  const dx = (cw - dw) / 2;
-  const dy = (ch - dh) / 2;
-  ctx.fillStyle = bgColor;
-  ctx.fillRect(0, 0, cw, ch);
-  ctx.drawImage(img, dx, dy, dw, dh);
-}
+  function setProgress(loaded, total) {
+    const p = Math.round((loaded / total) * 100);
+    loaderBar.style.width = `${p}%`;
+    loaderPercent.textContent = `${p}%`;
+  }
 
-/* ── Two-phase frame preloader ── */
-function loadFrame(index) {
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.src = FRAME_PATH(index);
-    img.onload = () => {
-      frames[index] = img;
-      if (index === 0) bgColor = sampleBgColor(img);
-      if (index % 20 === 0 && frames[index]) bgColor = sampleBgColor(img);
-      resolve();
-    };
-    img.onerror = () => resolve();
-  });
-}
+  function sampleBgColor(img) {
+    const c = document.createElement("canvas");
+    c.width = c.height = 4;
+    const cx = c.getContext("2d");
+    if (!cx) return bgColor;
+    cx.drawImage(img, 0, 0, 4, 4);
+    const d = cx.getImageData(1, 1, 1, 1).data;
+    return `rgb(${d[0]},${d[1]},${d[2]})`;
+  }
 
-async function preloadFrames() {
-  const firstBatch = Math.min(10, FRAME_COUNT);
-  for (let i = 0; i < firstBatch; i++) await loadFrame(i);
-  updateLoader(firstBatch / FRAME_COUNT);
+  function resizeCanvas() {
+    const dpr = Math.min(window.devicePixelRatio || 1, isMobile() ? 1.25 : 1.75);
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    canvas.width = Math.floor(w * dpr);
+    canvas.height = Math.floor(h * dpr);
+    canvas.style.width = `${w}px`;
+    canvas.style.height = `${h}px`;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    if (currentFrame >= 0) drawFrame(currentFrame);
+  }
 
-  const promises = [];
-  for (let i = firstBatch; i < FRAME_COUNT; i++) {
-    promises.push(
-      loadFrame(i).then(() => updateLoader(frames.filter(Boolean).length / FRAME_COUNT))
+  function drawFrame(index) {
+    const img = frames[index];
+    if (!img) return;
+    const cw = window.innerWidth;
+    const ch = window.innerHeight;
+    const iw = img.naturalWidth || img.width;
+    const ih = img.naturalHeight || img.height;
+    const pad = isMobile() ? 0.96 : 0.9;
+    const scale = Math.max(cw / iw, ch / ih) * pad;
+    const dw = iw * scale;
+    const dh = ih * scale;
+    const dx = (cw - dw) / 2;
+    const dy = (ch - dh) / 2;
+
+    if (index % 16 === 0) bgColor = sampleBgColor(img);
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, cw, ch);
+    ctx.drawImage(img, dx, dy, dw, dh);
+
+    const g = ctx.createRadialGradient(
+      cw * 0.5,
+      ch * 0.5,
+      Math.min(cw, ch) * 0.28,
+      cw * 0.5,
+      ch * 0.5,
+      Math.max(cw, ch) * 0.72
     );
-  }
-  await Promise.all(promises);
-  updateLoader(1);
-  loader.classList.add("hidden");
-  init();
-}
-
-function updateLoader(progress) {
-  const pct = Math.round(progress * 100);
-  loaderFill.style.width = pct + "%";
-  loaderPercent.textContent = pct + "%";
-}
-
-/* ── Position sections at midpoint of enter/leave ── */
-function positionSections() {
-  document.querySelectorAll(".scroll-section").forEach((section) => {
-    const enter = parseFloat(section.dataset.enter) / 100;
-    const leave = parseFloat(section.dataset.leave) / 100;
-    const mid = (enter + leave) / 2;
-    section.style.top = mid * 100 + "%";
-    section.style.transform = "translateY(-50%)";
-  });
-}
-
-/* ── Section animation system ── */
-function setupSectionAnimation(section) {
-  const type = section.dataset.animation;
-  const persist = section.dataset.persist === "true";
-  const enter = parseFloat(section.dataset.enter) / 100;
-  const leave = parseFloat(section.dataset.leave) / 100;
-  const children = section.querySelectorAll(
-    ".section-label, .section-heading, .section-body, .section-note, .cta-button, .cta-buttons, .stat"
-  );
-
-  const tl = gsap.timeline({ paused: true });
-
-  switch (type) {
-    case "fade-up":
-      tl.from(children, { y: 50, opacity: 0, stagger: 0.12, duration: 0.9, ease: "power3.out" });
-      break;
-    case "slide-left":
-      tl.from(children, { x: -80, opacity: 0, stagger: 0.14, duration: 0.9, ease: "power3.out" });
-      break;
-    case "slide-right":
-      tl.from(children, { x: 80, opacity: 0, stagger: 0.14, duration: 0.9, ease: "power3.out" });
-      break;
-    case "scale-up":
-      tl.from(children, { scale: 0.85, opacity: 0, stagger: 0.12, duration: 1.0, ease: "power2.out" });
-      break;
-    case "rotate-in":
-      tl.from(children, { y: 40, rotation: 3, opacity: 0, stagger: 0.1, duration: 0.9, ease: "power3.out" });
-      break;
-    case "stagger-up":
-      tl.from(children, { y: 60, opacity: 0, stagger: 0.15, duration: 0.8, ease: "power3.out" });
-      break;
-    case "clip-reveal":
-      tl.from(children, { clipPath: "inset(100% 0 0 0)", opacity: 0, stagger: 0.15, duration: 1.2, ease: "power4.inOut" });
-      break;
+    g.addColorStop(0, "rgba(7,6,11,0)");
+    g.addColorStop(0.7, "rgba(7,6,11,0.15)");
+    g.addColorStop(1, "rgba(7,6,11,0.72)");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, cw, ch);
   }
 
-  let played = false;
+  function scrubLoop() {
+    scrubRaf = 0;
+    const ease = isMobile() ? 0.22 : 0.16;
+    smoothFrameF += (targetFrameF - smoothFrameF) * ease;
 
-  ScrollTrigger.create({
-    trigger: scrollContainer,
-    start: "top top",
-    end: "bottom bottom",
-    onUpdate: (self) => {
-      const p = self.progress;
-      if (p >= enter && p <= leave) {
-        if (!played) {
-          played = true;
-          section.classList.add("visible");
-          gsap.set(section, { opacity: 1 });
-          tl.play();
-        }
-      } else if (!persist && played) {
-        if (p < enter || p > leave) {
-          played = false;
-          section.classList.remove("visible");
-          tl.reverse();
-          gsap.set(section, { opacity: 0 });
-        }
-      }
-    },
-  });
-}
+    if (Math.abs(targetFrameF - smoothFrameF) < 0.02) {
+      smoothFrameF = targetFrameF;
+    }
 
-/* ── Counter animations ── */
-function initCounters() {
-  const statsSection = document.querySelector(".section-stats");
-  if (!statsSection) return;
-  const enter = parseFloat(statsSection.dataset.enter) / 100;
-  const counters = [];
+    const idx = Math.max(
+      0,
+      Math.min(frames.length - 1, Math.round(smoothFrameF))
+    );
+    if (idx !== currentFrame) {
+      currentFrame = idx;
+      drawFrame(idx);
+    }
 
-  document.querySelectorAll(".stat-number").forEach((el) => {
-    counters.push({
-      el,
-      target: parseFloat(el.dataset.value),
-      decimals: parseInt(el.dataset.decimals || "0"),
-      obj: { val: 0 },
+    if (smoothFrameF !== targetFrameF) {
+      scrubRaf = requestAnimationFrame(scrubLoop);
+    }
+  }
+
+  function setFrameTarget(index) {
+    targetFrameF = index;
+    if (!scrubRaf) scrubRaf = requestAnimationFrame(scrubLoop);
+  }
+
+  function loadImage(src) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.decoding = "async";
+      img.onload = () => resolve(img);
+      img.onerror = () => resolve(null);
+      img.src = src;
     });
-  });
+  }
 
-  let counted = false;
+  async function preloadFrames() {
+    frames = new Array(SOURCE_FRAMES).fill(null);
+    let loaded = 0;
 
-  ScrollTrigger.create({
-    trigger: scrollContainer,
-    start: "top top",
-    end: "bottom bottom",
-    onUpdate: (self) => {
-      if (self.progress >= enter && !counted) {
-        counted = true;
-        counters.forEach(({ el, target, decimals, obj }) => {
-          gsap.to(obj, {
-            val: target,
-            duration: 2,
-            ease: "power1.out",
-            onUpdate: () => {
-              el.textContent = decimals === 0 ? Math.round(obj.val) : obj.val.toFixed(decimals);
-            },
-          });
-        });
-      } else if (self.progress < enter - 0.05 && counted) {
-        counted = false;
-        counters.forEach(({ el, obj }) => {
-          obj.val = 0;
-          el.textContent = "0";
-        });
-      }
-    },
-  });
-}
+    const loadOne = async (i) => {
+      const path = `${FRAME_DIR}frame_${String(i + 1).padStart(4, "0")}.webp`;
+      frames[i] = await loadImage(path);
+      loaded += 1;
+      setProgress(loaded, SOURCE_FRAMES);
+    };
 
-/* ── Marquee ── */
-function initMarquees() {
-  document.querySelectorAll(".marquee-wrap").forEach((el) => {
-    const speed = parseFloat(el.dataset.scrollSpeed) || -25;
-    const enter = parseFloat(el.dataset.enter) / 100;
-    const leave = parseFloat(el.dataset.leave) / 100;
-    const text = el.querySelector(".marquee-text");
+    const first = Math.min(12, SOURCE_FRAMES);
+    await Promise.all(Array.from({ length: first }, (_, i) => loadOne(i)));
+    if (frames[0]) {
+      drawFrame(0);
+      currentFrame = 0;
+      smoothFrameF = 0;
+      targetFrameF = 0;
+    }
 
-    gsap.to(text, {
-      xPercent: speed,
-      ease: "none",
-      scrollTrigger: {
-        trigger: scrollContainer,
-        start: "top top",
-        end: "bottom bottom",
-        scrub: true,
-      },
+    const batch = isMobile() ? 6 : 12;
+    for (let start = first; start < SOURCE_FRAMES; start += batch) {
+      const end = Math.min(start + batch, SOURCE_FRAMES);
+      await Promise.all(
+        Array.from({ length: end - start }, (_, j) => loadOne(start + j))
+      );
+    }
+    return frames.filter(Boolean).length > 40;
+  }
+
+  function positionSections() {
+    const totalH = scrollContainer.offsetHeight;
+    document.querySelectorAll(".scroll-section").forEach((section) => {
+      const enter = parseFloat(section.dataset.enter) / 100;
+      const leave = parseFloat(section.dataset.leave) / 100;
+      section.style.top = `${((enter + leave) / 2) * totalH}px`;
     });
+  }
 
+  function setupSectionDrivers() {
+    sectionDrivers = [];
+    document.querySelectorAll(".scroll-section").forEach((section) => {
+      const type = section.dataset.animation;
+      const persist = section.dataset.persist === "true";
+      const enter = parseFloat(section.dataset.enter) / 100;
+      const leave = parseFloat(section.dataset.leave) / 100;
+      const children = section.querySelectorAll(
+        ".section-label, .section-heading, .section-body, .service-list li, .cta-button, .nebula-cta, .stat, .cta-row"
+      );
+
+      gsap.set(children, { clearProps: "all" });
+      const tl = gsap.timeline({ paused: true });
+      const from =
+        type === "slide-left"
+          ? { x: -48, opacity: 0 }
+          : type === "slide-right"
+            ? { x: 48, opacity: 0 }
+            : type === "scale-up"
+              ? { scale: 0.92, opacity: 0 }
+              : { y: 32, opacity: 0 };
+
+      tl.fromTo(
+        children,
+        { ...from },
+        {
+          x: 0,
+          y: 0,
+          scale: 1,
+          opacity: 1,
+          stagger: 0.07,
+          duration: 0.55,
+          ease: "power2.out",
+        }
+      );
+
+      sectionDrivers.push({ enter, leave, persist, tl, maxSeen: 0 });
+    });
+  }
+
+  function syncSections(p) {
+    sectionDrivers.forEach((d) => {
+      const span = Math.max(d.leave - d.enter, 0.001);
+      let local = (p - d.enter) / span;
+      if (local < 0) local = 0;
+      if (local > 1) local = 1;
+
+      if (d.persist) {
+        d.maxSeen = Math.max(d.maxSeen, local);
+        d.tl.progress(d.maxSeen);
+      } else if (p >= d.enter && p <= d.leave) {
+        d.tl.progress(Math.min(1, local * 1.35));
+      } else if (p < d.enter) {
+        d.tl.progress(0);
+      } else {
+        d.tl.progress(Math.max(0, 1 - (p - d.leave) / 0.06));
+      }
+    });
+  }
+
+  function syncHero(p) {
+    // Glass hero stays over car; fades out softly as you scroll
+    const heroFade = Math.max(0, 1 - p * 7);
+    heroSection.style.opacity = String(heroFade);
+    heroSection.style.pointerEvents = p > 0.14 ? "none" : "auto";
+    canvasWrap.style.opacity = "1";
+    canvasWrap.style.clipPath = "none";
+  }
+
+  function syncOverlay(p) {
+    const enter = 0.64;
+    const leave = 0.78;
+    const fade = 0.04;
+    let opacity = 0;
+    if (p >= enter - fade && p <= enter) opacity = (p - (enter - fade)) / fade;
+    else if (p > enter && p < leave) opacity = 0.88;
+    else if (p >= leave && p <= leave + fade) opacity = 0.88 * (1 - (p - leave) / fade);
+    overlay.style.opacity = String(opacity);
+  }
+
+  function syncMarquee(p) {
+    document.querySelectorAll(".marquee-wrap").forEach((el) => {
+      const enter = parseFloat(el.dataset.enter || "0") / 100;
+      const leave = parseFloat(el.dataset.leave || "100") / 100;
+      const speed = parseFloat(el.dataset.scrollSpeed) || -25;
+      const text = el.querySelector(".marquee-text");
+      let opacity = 0;
+      if (p >= enter && p <= leave) opacity = 1;
+      else if (p > enter - 0.04 && p < enter) opacity = (p - (enter - 0.04)) / 0.04;
+      else if (p > leave && p < leave + 0.04) opacity = 1 - (p - leave) / 0.04;
+      el.style.opacity = String(opacity);
+      if (text) text.style.transform = `translate3d(${p * speed}%,0,0)`;
+    });
+  }
+
+  function syncFrame(p) {
+    // Linear map across almost full scroll — tiny steps per wheel tick
+    const t = Math.min(1, Math.max(0, p / FRAME_SCROLL_END));
+    const index = t * (frames.length - 1);
+    setFrameTarget(index);
+  }
+
+  function initMasterScroll() {
     ScrollTrigger.create({
       trigger: scrollContainer,
       start: "top top",
       end: "bottom bottom",
+      scrub: true,
       onUpdate: (self) => {
         const p = self.progress;
-        if (p >= enter - 0.04 && p <= leave + 0.04) {
-          gsap.to(el, { opacity: 0.35, duration: 0.3 });
-        } else {
-          gsap.to(el, { opacity: 0, duration: 0.3 });
-        }
+        syncFrame(p);
+        syncHero(p);
+        syncOverlay(p);
+        syncMarquee(p);
+        syncSections(p);
       },
     });
-  });
-}
+  }
 
-/* ── Dark overlay for stats ── */
-function initDarkOverlay(enterPct, leavePct) {
-  const overlay = document.getElementById("dark-overlay");
-  const enter = enterPct / 100;
-  const leave = leavePct / 100;
-  const fadeRange = 0.04;
+  function initNavScroll() {
+    document.querySelectorAll('.site-header a[href^="#"]').forEach((link) => {
+      link.addEventListener("click", (e) => {
+        const id = link.getAttribute("href").slice(1);
+        if (!id) return;
+        e.preventDefault();
 
-  ScrollTrigger.create({
-    trigger: scrollContainer,
-    start: "top top",
-    end: "bottom bottom",
-    scrub: true,
-    onUpdate: (self) => {
-      const p = self.progress;
-      let opacity = 0;
-      if (p >= enter - fadeRange && p <= enter) opacity = (p - (enter - fadeRange)) / fadeRange;
-      else if (p > enter && p < leave) opacity = 0.9;
-      else if (p >= leave && p <= leave + fadeRange) opacity = 0.9 * (1 - (p - leave) / fadeRange);
-      overlay.style.opacity = opacity;
-    },
-  });
-}
+        if (id === "top") {
+          if (lenis) lenis.scrollTo(0, { duration: 1.15 });
+          else window.scrollTo({ top: 0, behavior: "smooth" });
+          return;
+        }
 
-/* ── Circle-wipe hero reveal ── */
-function initHeroTransition() {
-  ScrollTrigger.create({
-    trigger: scrollContainer,
-    start: "top top",
-    end: "bottom bottom",
-    scrub: true,
-    onUpdate: (self) => {
-      const p = self.progress;
-      heroSection.style.opacity = Math.max(0, 1 - p * 15);
-      const wipeProgress = Math.min(1, Math.max(0, (p - 0.01) / 0.06));
-      const radius = wipeProgress * 75;
-      canvasWrap.style.clipPath = `circle(${radius}% at 50% 50%)`;
-    },
-  });
-}
+        const target = document.getElementById(id);
+        if (!target) return;
 
-/* ── Frame-to-scroll binding ── */
-function initFrameScroll() {
-  ScrollTrigger.create({
-    trigger: scrollContainer,
-    start: "top top",
-    end: "bottom bottom",
-    scrub: true,
-    onUpdate: (self) => {
-      const accelerated = Math.min(self.progress * FRAME_SPEED, 1);
-      const index = Math.min(Math.floor(accelerated * (FRAME_COUNT - 1)), FRAME_COUNT - 1);
-      if (index !== currentFrame) {
-        currentFrame = index;
-        requestAnimationFrame(() => drawFrame(currentFrame));
-      }
-    },
-  });
-}
+        const enter = parseFloat(target.dataset.enter || "0") / 100;
+        const leave = parseFloat(target.dataset.leave || "100") / 100;
+        const p = enter + (leave - enter) * 0.28;
+        const maxScroll =
+          document.documentElement.scrollHeight - window.innerHeight;
+        const y = Math.max(0, Math.min(maxScroll, p * maxScroll));
 
-/* ── Init all ── */
-function init() {
-  resizeCanvas();
-  positionSections();
-  drawFrame(0);
+        if (lenis) lenis.scrollTo(y, { duration: 1.2 });
+        else window.scrollTo({ top: y, behavior: "smooth" });
+      });
+    });
+  }
 
-  initFrameScroll();
-  initHeroTransition();
-  initDarkOverlay(54, 72);
-  initMarquees();
+  function initCounters() {
+    document.querySelectorAll(".stat-number").forEach((el) => {
+      const target = parseFloat(el.dataset.value);
+      const decimals = parseInt(el.dataset.decimals || "0", 10);
+      const obj = { val: 0 };
+      gsap.to(obj, {
+        val: target,
+        duration: prefersReducedMotion ? 0.01 : 1.6,
+        ease: "power1.out",
+        snap: { val: decimals === 0 ? 1 : 0.01 },
+        scrollTrigger: {
+          trigger: el.closest(".scroll-section"),
+          start: "top 75%",
+          toggleActions: "play none none reverse",
+        },
+        onUpdate: () => {
+          el.textContent =
+            decimals === 0 ? String(Math.round(obj.val)) : obj.val.toFixed(decimals);
+        },
+      });
+    });
+  }
 
-  document.querySelectorAll(".scroll-section").forEach(setupSectionAnimation);
-  initCounters();
+  async function init() {
+    resizeCanvas();
+    window.addEventListener("resize", () => {
+      resizeCanvas();
+      positionSections();
+      ScrollTrigger.refresh();
+    });
 
-  gsap.from(".hero-heading .word", {
-    y: 80, opacity: 0, stagger: 0.15, duration: 1.2, ease: "power3.out", delay: 0.3,
-  });
-  gsap.from(".hero-tagline", { y: 30, opacity: 0, duration: 1, ease: "power3.out", delay: 0.8 });
-}
+    const ok = await preloadFrames();
+    if (!ok) {
+      loaderPercent.textContent = "فریم پیدا نشد";
+      return;
+    }
 
-preloadFrames();
+    loader.classList.add("is-done");
+    window.scrollTo(0, 0);
+    if (lenis) lenis.scrollTo(0, { immediate: true });
+
+    positionSections();
+    setupSectionDrivers();
+    initCounters();
+    initNavScroll();
+    initMasterScroll();
+    ScrollTrigger.refresh();
+  }
+
+  init();
+})();

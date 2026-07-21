@@ -3,126 +3,131 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="ENZO.DEV — طراحی سایت اختصاصی با تجربه اسکرول سینمایی" />
-  <title>ENZO.DEV | طراحی سایت</title>
-  <link rel="icon" href="/public/favicon.svg" type="image/svg+xml" />
+  <meta name="description" content="ENZO.DEV — طراحی و پیاده‌سازی سایت از صفر تا صد: دامنه، سرور، طراحی، کدنویسی، درگاه پرداخت و دیپلوی." />
+  <title>ENZO.DEV | طراحی سایت صفر تا صد</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
   <div id="loader">
-    <div class="loader-brand" dir="ltr">ENZO.DEV</div>
-    <div id="loader-bar"><span id="loader-fill"></span></div>
+    <div class="loader-brand">ENZO.DEV</div>
+    <div class="loader-track"><div id="loader-bar"></div></div>
     <div id="loader-percent">0%</div>
   </div>
 
   <header class="site-header">
+    <a class="logo" href="#top" dir="ltr">ENZO.DEV</a>
     <nav>
-      <a href="#" class="logo" dir="ltr">ENZO.DEV</a>
-      <div class="nav-links">
-        <a href="#showcase">نمونه</a>
-        <a href="#contact">تماس</a>
-      </div>
+      <a href="#services">خدمات</a>
+      <a href="#contact">تماس</a>
     </nav>
   </header>
 
-  <section class="hero-standalone" id="hero">
-    <span class="section-label">001 / Studio</span>
+  <section class="hero-standalone" id="top">
+    <span class="section-label">۰۰۱ / آغاز</span>
     <h1 class="hero-heading">
-      <span class="word">طراحی</span>
-      <span class="word">سایت</span>
-      <span class="word accent">سینمایی</span>
+      <span class="italic">از ایده تا لانچ</span>
     </h1>
-    <p class="hero-tagline">تجربه‌ای که با اسکرول زنده می‌شود — برای برندهایی که می‌خواهند دیده شوند.</p>
+    <p class="hero-tagline">ثبت دامنه دلخواه، خرید سرور، طراحی اختصاصی سایت، پیاده‌سازی روی سرور، درگاه پرداخت و اینماد. تمام کارها از صفر تا صد Full Stack.</p>
     <div class="scroll-indicator">
-      <span>اسکرول</span>
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+      <span>اسکرول کنید</span>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 9l6 6 6-6"/></svg>
     </div>
   </section>
 
   <div class="canvas-wrap" id="canvas-wrap">
     <canvas id="canvas"></canvas>
   </div>
-
   <div id="dark-overlay"></div>
 
-  <div class="marquee-wrap" data-enter="20" data-leave="75" data-scroll-speed="-30">
-    <div class="marquee-text" dir="ltr">ENZO.DEV — WEB DESIGN — SCROLL EXPERIENCE — ENZO.DEV —</div>
+  <div class="marquee-wrap" data-enter="48" data-leave="68" data-scroll-speed="-30">
+    <div class="marquee-text" dir="ltr">ENZO.DEV — ZERO TO LAUNCH — DOMAIN · SERVER · DESIGN · CODE · PAY · DEPLOY — </div>
   </div>
 
   <div id="scroll-container">
-    <section class="scroll-section section-content align-right" id="showcase"
-      data-enter="18" data-leave="32" data-animation="fade-up">
+    <section class="scroll-section section-content align-left" data-enter="18" data-leave="36" data-animation="slide-left" id="services">
       <div class="section-inner">
-        <span class="section-label">002 / Design</span>
-        <h2 class="section-heading">طراحی اختصاصی، نه قالب</h2>
-        <p class="section-body">هر پروژه با هویت بصری منحصربه‌فرد شما ساخته می‌شود — از تایپوگرافی تا انیمیشن اسکرول.</p>
+        <span class="section-label">۰۰۲ / خدمات</span>
+        <h2 class="section-heading">خلاصه روند کار</h2>
+        <p class="section-body">از ایده تا لانچ؛ مراحل اصلی اجرای یک فروشگاه کامل</p>
+        <ul class="service-list">
+          <li>طراحی و پیاده‌سازی فروشگاه Next.js (RTL)</li>
+          <li>دامنه، سرور، SSL و دیپلوی تولید</li>
+          <li>کاتالوگ محصول و دسته‌بندی تخصصی</li>
+          <li>صفحه محصول، کارت و قانون شیشه دودی</li>
+          <li>سبد خرید و جریان چک‌اوت</li>
+          <li>OTP پیامکی و احراز هویت</li>
+          <li>درگاه پرداخت و کارت‌به‌کارت</li>
+          <li>پنل ادمین سفارش و محصولات</li>
+          <li>اتصال API ترب و همگام‌سازی کاتالوگ</li>
+          <li>سئو، سایت‌مپ، وبلاگ و اینماد</li>
+          <li>اسلایدر هیرو و بهینه‌سازی موبایل</li>
+          <li>اعلان تلگرام و مانیتورینگ سفارش</li>
+        </ul>
       </div>
     </section>
 
-    <section class="scroll-section section-content align-left"
-      data-enter="30" data-leave="44" data-animation="slide-right">
+    <section class="scroll-section section-content align-right" data-enter="38" data-leave="50" data-animation="slide-right">
       <div class="section-inner">
-        <span class="section-label">003 / Motion</span>
-        <h2 class="section-heading">حرکت در خدمت روایت</h2>
-        <p class="section-body">ویدیو، فریم‌به‌فریم، پین و اسکراب — همان حس سایت‌های پریمیوم که مشتری را میخکوب می‌کند.</p>
+        <span class="section-label">۰۰۳ / طراحی</span>
+        <h2 class="section-heading">ظاهر متمایز، تجربه روان</h2>
+        <p class="section-body">طراحی رابط اختصاصی، موبایل‌فرست و بدون شلوغی — برند شما در مرکز توجه می‌ماند.</p>
       </div>
     </section>
 
-    <section class="scroll-section section-content align-right"
-      data-enter="42" data-leave="56" data-animation="scale-up">
+    <section class="scroll-section section-content align-left" data-enter="52" data-leave="64" data-animation="fade-up">
       <div class="section-inner">
-        <span class="section-label">004 / Performance</span>
-        <h2 class="section-heading">سریع، سبک، موبایل‌فرست</h2>
-        <p class="section-body">بهینه برای سئو و موبایل — زیبایی بدون قربانی کردن سرعت بارگذاری.</p>
+        <span class="section-label">۰۰۴ / پیاده‌سازی</span>
+        <h2 class="section-heading">کد تمیز، آماده رشد</h2>
+        <p class="section-body">پیاده‌سازی کامل، درگاه پرداخت و دیپلوی روی Netlify یا سرور اختصاصی — بدون وابستگی به تیم سوم.</p>
       </div>
     </section>
 
-    <section class="scroll-section section-stats"
-      data-enter="54" data-leave="72" data-animation="stagger-up">
+    <section class="scroll-section section-stats" data-enter="64" data-leave="78" data-animation="stagger-up" id="process">
       <div class="stats-grid">
         <div class="stat">
-          <span class="stat-number" data-value="50" data-decimals="0">0</span>
-          <span class="stat-suffix">+</span>
-          <span class="stat-label">پروژه تحویل‌شده</span>
-        </div>
-        <div class="stat">
-          <span class="stat-number" data-value="3" data-decimals="0">0</span>
-          <span class="stat-suffix">ث</span>
-          <span class="stat-label">میانگین لود</span>
+          <span class="stat-number" data-value="6" data-decimals="0">0</span>
+          <span class="stat-suffix">مرحله</span>
+          <span class="stat-label">صفر تا صد پروژه</span>
         </div>
         <div class="stat">
           <span class="stat-number" data-value="100" data-decimals="0">0</span>
-          <span class="stat-suffix">%</span>
-          <span class="stat-label">ریسپانسیو</span>
+          <span class="stat-suffix">٪</span>
+          <span class="stat-label">اجرای اختصاصی</span>
+        </div>
+        <div class="stat stat-enzo">
+          <span class="stat-label">مسئول کل پروژه</span>
+          <span class="stat-enzo-name" dir="ltr">ENZO</span>
         </div>
       </div>
     </section>
 
-    <section class="scroll-section section-content align-left"
-      data-enter="68" data-leave="82" data-animation="clip-reveal">
+    <section class="scroll-section section-content align-right" data-enter="80" data-leave="94" data-animation="clip-reveal" data-persist="true" id="contact">
       <div class="section-inner">
-        <span class="section-label">005 / Process</span>
-        <h2 class="section-heading">از ایده تا لانچ</h2>
-        <p class="section-body">مشاوره، طراحی، توسعه، تست و دیپلوی — یک مسیر شفاف تا سایت زنده شما.</p>
-      </div>
-    </section>
-
-    <section class="scroll-section section-content align-right" id="contact"
-      data-enter="85" data-leave="100" data-animation="rotate-in" data-persist="true">
-      <div class="section-inner">
-        <span class="section-label">006 / Contact</span>
-        <h2 class="section-heading">پروژه بعدی‌تان را بسازیم</h2>
-        <p class="section-body">برای مشاوره و شروع همکاری از لینکدین یا گیت‌هاب پیام دهید.</p>
-        <div class="cta-buttons">
-          <a href="https://www.linkedin.com/in/mohammad-hasseli-59a624362/" target="_blank" rel="noopener" class="cta-button primary">LinkedIn</a>
-          <a href="https://github.com/mhasseli1987" target="_blank" rel="noopener" class="cta-button">GitHub</a>
+        <span class="section-label">۰۰۵ / تماس</span>
+        <h2 class="section-heading">پروژه‌ات را شروع کنیم</h2>
+        <p class="section-body">برای مشاوره و شروع همکاری از طریق LinkedIn یا GitHub پیام بده.</p>
+        <div class="cta-row">
+          <div class="nebula-cta">
+            <span class="nebula-glow" aria-hidden="true"></span>
+            <a class="nebula-btn" href="https://www.linkedin.com/in/mohammad-hasseli-59a624362/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+          </div>
+          <div class="nebula-cta nebula-cta--ghost">
+            <span class="nebula-glow" aria-hidden="true"></span>
+            <a class="nebula-btn nebula-btn--ghost" href="https://github.com/mhasseli1987" target="_blank" rel="noopener noreferrer">GitHub</a>
+          </div>
         </div>
       </div>
     </section>
+
   </div>
+
+  <footer class="site-credit" dir="ltr">
+    <p class="credit-made">Made by ENZO</p>
+    <p class="credit-rights">All Rights Reserved ©</p>
+  </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/lenis@1/dist/lenis.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js"></script>
