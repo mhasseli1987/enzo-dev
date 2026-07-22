@@ -3,7 +3,7 @@
 
   const FRAME_DIR = "frames/";
   // Full ping-pong on disk — every frame for micro-step scrub
-  const SOURCE_FRAMES = 383;
+  const SOURCE_FRAMES = 192;
   // Spread animation across nearly entire scroll (no early jump-to-end)
   const FRAME_SCROLL_END = 0.92;
   const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -78,8 +78,19 @@
     if (currentFrame >= 0) drawFrame(currentFrame);
   }
 
+  function nearestLoadedFrame(index) {
+    if (frames[index]) return index;
+    for (let d = 1; d < frames.length; d++) {
+      if (index - d >= 0 && frames[index - d]) return index - d;
+      if (index + d < frames.length && frames[index + d]) return index + d;
+    }
+    return -1;
+  }
+
   function drawFrame(index) {
-    const img = frames[index];
+    const resolved = frames[index] ? index : nearestLoadedFrame(index);
+    if (resolved < 0) return;
+    const img = frames[resolved];
     if (!img) return;
     const cw = window.innerWidth;
     const ch = window.innerHeight;
@@ -92,7 +103,7 @@
     const dx = (cw - dw) / 2;
     const dy = (ch - dh) / 2;
 
-    if (index % 16 === 0) bgColor = sampleBgColor(img);
+    if (resolved % 16 === 0) bgColor = sampleBgColor(img);
     ctx.fillStyle = bgColor;
     ctx.fillRect(0, 0, cw, ch);
     ctx.drawImage(img, dx, dy, dw, dh);
@@ -153,15 +164,19 @@
   async function preloadFrames() {
     frames = new Array(SOURCE_FRAMES).fill(null);
     let loaded = 0;
+    // Unlock UI after a small head start — rest loads in background
+    const READY_AT = Math.min(isMobile() ? 18 : 24, SOURCE_FRAMES);
+    let unlocked = false;
 
     const loadOne = async (i) => {
       const path = `${FRAME_DIR}frame_${String(i + 1).padStart(4, "0")}.webp`;
       frames[i] = await loadImage(path);
       loaded += 1;
-      setProgress(loaded, SOURCE_FRAMES);
+      if (!unlocked) setProgress(loaded, READY_AT);
+      else setProgress(SOURCE_FRAMES, SOURCE_FRAMES);
     };
 
-    const first = Math.min(12, SOURCE_FRAMES);
+    const first = READY_AT;
     await Promise.all(Array.from({ length: first }, (_, i) => loadOne(i)));
     if (frames[0]) {
       drawFrame(0);
@@ -169,15 +184,22 @@
       smoothFrameF = 0;
       targetFrameF = 0;
     }
+    unlocked = true;
+    setProgress(SOURCE_FRAMES, SOURCE_FRAMES);
 
-    const batch = isMobile() ? 6 : 12;
-    for (let start = first; start < SOURCE_FRAMES; start += batch) {
-      const end = Math.min(start + batch, SOURCE_FRAMES);
-      await Promise.all(
-        Array.from({ length: end - start }, (_, j) => loadOne(start + j))
-      );
-    }
-    return frames.filter(Boolean).length > 40;
+    // Continue remaining frames without blocking the site
+    const continueLoad = async () => {
+      const batch = isMobile() ? 8 : 16;
+      for (let start = first; start < SOURCE_FRAMES; start += batch) {
+        const end = Math.min(start + batch, SOURCE_FRAMES);
+        await Promise.all(
+          Array.from({ length: end - start }, (_, j) => loadOne(start + j))
+        );
+      }
+    };
+    continueLoad().catch(() => {});
+
+    return frames.filter(Boolean).length >= Math.min(12, SOURCE_FRAMES);
   }
 
   function positionSections() {

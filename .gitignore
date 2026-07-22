@@ -26,3 +26,7 @@ dist-ssr
 
 # Local Netlify folder
 .netlify
+
+# Frame encode working dirs (keep frames/ in repo)
+frames_hi/
+frames_opt/
