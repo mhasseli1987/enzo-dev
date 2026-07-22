@@ -3,7 +3,7 @@
 
   const FRAME_DIR = "frames/";
   // Full ping-pong on disk — every frame for micro-step scrub
-  const SOURCE_FRAMES = 192;
+  const SOURCE_FRAMES = 383;
   // Spread animation across nearly entire scroll (no early jump-to-end)
   const FRAME_SCROLL_END = 0.92;
   const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
