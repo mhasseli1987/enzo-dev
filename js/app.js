@@ -52,8 +52,8 @@
 
   function setProgress(loaded, total) {
     const p = Math.round((loaded / total) * 100);
-    loaderBar.style.width = `${p}%`;
-    loaderPercent.textContent = `${p}%`;
+    if (loaderBar) loaderBar.style.width = `${p}%`;
+    if (loaderPercent) loaderPercent.textContent = `${p}%`;
   }
 
   function sampleBgColor(img) {
@@ -117,8 +117,8 @@
       Math.max(cw, ch) * 0.72
     );
     g.addColorStop(0, "rgba(7,6,11,0)");
-    g.addColorStop(0.7, "rgba(7,6,11,0.15)");
-    g.addColorStop(1, "rgba(7,6,11,0.72)");
+    g.addColorStop(0.75, "rgba(7,6,11,0.06)");
+    g.addColorStop(1, "rgba(7,6,11,0.35)");
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, cw, ch);
   }
@@ -219,7 +219,7 @@
       const enter = parseFloat(section.dataset.enter) / 100;
       const leave = parseFloat(section.dataset.leave) / 100;
       const children = section.querySelectorAll(
-        ".section-label, .section-heading, .section-body, .service-list li, .cta-button, .nebula-cta, .stat, .cta-row"
+        ".section-heading, .section-body, .service-list li, .cta-button, .nebula-cta, .stat, .cta-row"
       );
 
       gsap.set(children, { clearProps: "all" });
@@ -280,15 +280,9 @@
     canvasWrap.style.clipPath = "none";
   }
 
-  function syncOverlay(p) {
-    const enter = 0.64;
-    const leave = 0.78;
-    const fade = 0.04;
-    let opacity = 0;
-    if (p >= enter - fade && p <= enter) opacity = (p - (enter - fade)) / fade;
-    else if (p > enter && p < leave) opacity = 0.88;
-    else if (p >= leave && p <= leave + fade) opacity = 0.88 * (1 - (p - leave) / fade);
-    overlay.style.opacity = String(opacity);
+  function syncOverlay() {
+    // Keep page brightness steady — no scroll darkening
+    overlay.style.opacity = "0";
   }
 
   function syncMarquee(p) {
@@ -331,10 +325,10 @@
   }
 
   function initNavScroll() {
-    document.querySelectorAll('.site-header a[href^="#"]').forEach((link) => {
+    document.querySelectorAll('a[href^="#"]').forEach((link) => {
       link.addEventListener("click", (e) => {
         const id = link.getAttribute("href").slice(1);
-        if (!id) return;
+        if (!id || id === "contact") return;
         e.preventDefault();
 
         if (id === "top") {
@@ -356,6 +350,65 @@
         if (lenis) lenis.scrollTo(y, { duration: 1.2 });
         else window.scrollTo({ top: y, behavior: "smooth" });
       });
+    });
+  }
+
+  function initProjectModal() {
+    const modal = document.getElementById("project-modal");
+    const openBtn = document.getElementById("start-project-btn");
+    const navContact = document.getElementById("nav-contact-btn");
+    const submitBtn = document.getElementById("project-submit");
+    const brief = document.getElementById("project-brief");
+    if (!modal || !submitBtn || !brief) return;
+
+    const askStep = modal.querySelector('[data-step="ask"]');
+    const doneStep = modal.querySelector('[data-step="done"]');
+    const WA_NUMBER = "989304140872";
+
+    const open = () => {
+      modal.hidden = false;
+      document.body.style.overflow = "hidden";
+      if (askStep) askStep.hidden = false;
+      if (doneStep) doneStep.hidden = true;
+      brief.value = "";
+      setTimeout(() => brief.focus(), 50);
+    };
+
+    const close = () => {
+      modal.hidden = true;
+      document.body.style.overflow = "";
+    };
+
+    openBtn?.addEventListener("click", open);
+    navContact?.addEventListener("click", (e) => {
+      e.preventDefault();
+      open();
+    });
+    modal.querySelectorAll("[data-close-modal]").forEach((el) => {
+      el.addEventListener("click", close);
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && !modal.hidden) close();
+    });
+
+    submitBtn.addEventListener("click", () => {
+      const text = brief.value.trim();
+      if (!text) {
+        brief.focus();
+        brief.classList.add("is-invalid");
+        return;
+      }
+      brief.classList.remove("is-invalid");
+
+      const message =
+        "سلام، از طریق سایت ENZO.DEV پیام می‌دهم.\n\n" +
+        "مدل سایت مورد نظر:\n" +
+        text;
+      const url = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(message)}`;
+      window.open(url, "_blank", "noopener,noreferrer");
+
+      if (askStep) askStep.hidden = true;
+      if (doneStep) doneStep.hidden = false;
     });
   }
 
@@ -404,6 +457,7 @@
     setupSectionDrivers();
     initCounters();
     initNavScroll();
+    initProjectModal();
     initMasterScroll();
     ScrollTrigger.refresh();
   }
