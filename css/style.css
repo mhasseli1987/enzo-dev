@@ -754,6 +754,36 @@ a:focus-visible,
   margin-top: 1.75rem;
 }
 
+.nebula-cta--whatsapp {
+  flex: 1 1 100%;
+}
+
+.nebula-glow--whatsapp {
+  background: rgba(37, 211, 102, 0.45);
+}
+
+.nebula-btn--whatsapp {
+  width: 100%;
+  gap: 0.45rem;
+  background: #25d366;
+  color: #fff;
+  font-weight: 700;
+}
+
+.nebula-btn--whatsapp:hover {
+  background: #1ebe57;
+  transform: scale(1.03);
+}
+
+.nebula-btn--whatsapp:focus-visible {
+  outline: 2px solid #25d366;
+  outline-offset: 3px;
+}
+
+.wa-icon {
+  flex-shrink: 0;
+}
+
 /* Nebula CTA — adapted from framer NebulaCta */
 .nebula-cta {
   position: relative;

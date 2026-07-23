@@ -357,6 +357,7 @@
     const modal = document.getElementById("project-modal");
     const openBtn = document.getElementById("start-project-btn");
     const navContact = document.getElementById("nav-contact-btn");
+    const waContact = document.getElementById("contact-whatsapp-btn");
     const submitBtn = document.getElementById("project-submit");
     const brief = document.getElementById("project-brief");
     if (!modal || !submitBtn || !brief) return;
@@ -384,6 +385,7 @@
       e.preventDefault();
       open();
     });
+    waContact?.addEventListener("click", open);
     modal.querySelectorAll("[data-close-modal]").forEach((el) => {
       el.addEventListener("click", close);
     });
